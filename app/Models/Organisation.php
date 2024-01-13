@@ -9,10 +9,9 @@ use Spatie\Sluggable\SlugOptions;
 
 class Organisation extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory,HasSlug;
 
     protected $guarded = [];
-
     public function getSlugOptions() : SlugOptions
     {
         return SlugOptions::create()
