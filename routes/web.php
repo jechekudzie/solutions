@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\OrganisationController;
+use App\Http\Controllers\OrganisationTypeController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,13 +20,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/admin', function () {
+Route::get('/administration', function () {
     return view('admin.index');
 });
 
-Route::get('/admin/organisation_templates', function () {
-    return view('organisation_templates.index');
-});
+
+Route::get('/administration/organisation-types', [OrganisationTypeController::class, 'index'])->name('admin.organisation-types.index');
+Route::get('/administration/organisations', [OrganisationController::class, 'index'])->name('admin.organisations.index');
+
 
 /*
 |--------------------------------------------------------------------------
