@@ -25,6 +25,8 @@
     <link href="{{asset('administration/assets/css/app.min.css')}}" rel="stylesheet" type="text/css"/>
     <!-- custom Css-->
     <link href="{{asset('administration/assets/css/custom.min.css')}}" rel="stylesheet" type="text/css"/>
+    <!-- Font Awsome Icons Css V4 -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <!-- Gijgo config file -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -603,34 +605,25 @@
                 <ul class="navbar-nav" id="navbar-nav">
                     <li class="menu-title"><span data-key="t-menu">Menu</span></li>
                     <li class="nav-item">
-                        <a class="nav-link menu-link collapsed" href="#sidebarDashboards" data-bs-toggle="collapse"
-                           role="button"
-                           aria-expanded="false" aria-controls="sidebarDashboards">
-                            <i class="ri-dashboard-2-line"></i> <span data-key="t-dashboards">Dashboard</span>
+                        <a class="nav-link menu-link collapsed" href="#sidebarDashboards" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="sidebarDashboards">
+                           <span data-key="t-dashboards">Admin</span>
                         </a>
                         <div class="collapse menu-dropdown" id="sidebarDashboards">
                             <ul class="nav nav-sm flex-column">
                                 <li class="nav-item">
-                                    <a href="{{url('/admin/services')}}" class="nav-link active" data-key="t-analytics">
-                                        SERVICES </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{url('/admin/categories')}}" class="nav-link"
-                                       data-key="t-ecommerce"> PACKAGE CATEGORIES </a>
+                                    <a href="{{route('admin.organisation-types.index')}}" class="nav-link {{ Request::routeIs('admin.organisation-types*') ? 'active' : '' }}">
+                                        Manage Organisation Types
+                                    </a>
                                 </li>
 
                                 <li class="nav-item">
-                                    <a href="{{url('/admin/packages')}}" class="nav-link"
-                                       data-key="t-ecommerce"> PACKAGES </a>
-                                </li>
-
-                                <li class="nav-item">
-                                    <a href="{{url('/admin/accessories')}}" class="nav-link" data-key="t-crypto">
-                                        ACCESSORIES </a>
+                                    <a href="{{route('admin.organisations.index')}}"  class="nav-link {{ Request::routeIs('admin.organisations*') ? 'active' : '' }}">
+                                        Manage Organisations
+                                    </a>
                                 </li>
                             </ul>
                         </div>
-                    </li> <!-- end Dashboard Menu -->
+                    </li>
 
                     <li class="menu-title"><i class="ri-more-fill"></i> <span data-key="t-pages">Pages</span></li>
 
@@ -701,9 +694,29 @@
 
 <!-- App js -->
 <script src="{{asset('administration/assets/js/app.js')}}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Iterate over each active nav-link
+        $('.nav-link.active').each(function() {
+            // Traverse up to find the parent 'menu-link'
+            var parentMenuLink = $(this).closest('.collapse').prev('.menu-link');
+
+            // Check if parentMenuLink is found
+            if (parentMenuLink.length) {
+                // Remove 'collapsed' class, set 'aria-expanded' to true, and add 'active' class
+                parentMenuLink.removeClass('collapsed').addClass('active').attr('aria-expanded', 'true');
+
+                // Expand the parent collapse menu
+                $(this).closest('.collapse').addClass('show');
+            }
+        });
+    });
+
+</script>
 @stack('scripts')
 
-@notifyJs
+
 </body>
 
 </html>

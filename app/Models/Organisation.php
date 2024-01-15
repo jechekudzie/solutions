@@ -14,7 +14,10 @@ class Organisation extends Model
 
     protected $guarded = [];
 
-
+    public function parentOrganisation()
+    {
+        return $this->belongsTo(Organisation::class, 'organisation_id');
+    }
     //has many organisations
     public function organisations()
     {
