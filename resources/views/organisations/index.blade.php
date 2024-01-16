@@ -55,7 +55,7 @@
                                     organisation type</p>
                             </div>
                             <div class="card-body">
-                                <form id="organisationTypeform" action="" method="post" enctype="multipart/form-data">
+                                <form id="organisationForm" action="" method="post" enctype="multipart/form-data">
                                     <input type="hidden" name="_method" value="POST">
                                     @csrf
                                     <div class="mb-3">
@@ -63,7 +63,6 @@
                                         <input type="text" name="name" class="form-control" id="fieldName"
                                                placeholder="Enter organisation name" value="">
                                     </div>
-
                                     <!-- Make sure the name attribute matches your database column name -->
                                     <input type="hidden" name="organisation_id" value="" id="parent_id">
                                     <input type="hidden" name="parent_name" value="" id="parent_name">
@@ -105,7 +104,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!--end col-->
                     <!--end card-->
                 </div>
@@ -118,11 +116,18 @@
     </div>
 
     <script>
+
         $(document).ready(function () {
+            //set up laravel ajax csrf token
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
+
             var tree = $('#tree').tree({
                 primaryKey: 'id',
                 dataSource: '/api/admin/organisations',
-                checkboxes: true,
                 uiLibrary: 'bootstrap4',
                 cascadeCheck: false,
             });
@@ -132,9 +137,8 @@
                     url: '/api/admin/organisations/' + organisation + '/edit',
                     type: 'GET',
                     success: function (data) {
-                        // Assuming 'data' is the returned object with 'name' and 'description'
-                        $('#fieldName').val(data.name); // Set the name
-                        $('#fieldDescription').val(data.description); // Set the description
+                        $('#fieldName').val(data.name);
+                        $('#fieldDescription').val(data.description);
                     },
                     error: function (error) {
                         console.log(error);
@@ -143,62 +147,51 @@
             }
 
             function clearOrganisationTypeFields() {
-                $('#fieldName').val(''); // Clears an input field
-                $('#fieldDescription').val(''); // Clears an input field
-                // Add more fields as needed
+                $('#fieldName').val('');
+                $('#fieldDescription').val('');
             }
 
-            //get the form
-            organisationTypeform = $('#organisationTypeform');
-            //hide the form
-            organisationTypeform.hide();
+            var organisationForm = $('#organisationForm');
+            organisationForm.hide();
 
             let [rand, type, organisation_id] = [null, null, null];
 
-            var checkedNodeId = null; // Variable to store the ID of the checked node
-            var nodeToUncheck = null; // Variable to store the ID of the node to uncheck
-
-            // Get references to the hidden field and the element to display the checked node's name
             var hiddenNodeIdField = $('#hiddenNodeId');
             var checkedNodeNameElement = $('#checkedNodeName');
 
-            let parentId = null; // Node ID
-            let parentName = null; // Parent Name
-            let recordData = null; // Record Data
-            let primaryNodeId = null; // Primary Node ID
-            let nodeName = null; // Node Name
-            let organisationID = null; // Organisation ID
-            let organisationType = null; // Organisation Type
-            let organisationName = null; // Organisation Name
-            let organisationSlug = null; // Organisation Slug
+            let parentId = null;
+            let parentName = null;
+            let primaryNodeId = null;
+            let nodeName = null;
+            let organisationID = null;
+            let organisationType = null;
+            let organisationName = null;
+            let organisationSlug = null;
+            let actionUrl = null;
+            actionUrl = '/admin/organisations/store';
 
-            //form data
             var submitButton = $('#submit-button');
             var cardTitle = $('#card-title');
             var pageTitle = $('#page-title');
 
-            // Get Record ID and record text on checkbox change
-            tree.on('checkboxChange', function (e, $node, record, state) {
-                if (state === 'checked') {
-                    recordData = record;
-                    primaryNodeId = record.id;
-                    nodeName = record.text;
-                    parentId = record.parentId;
-                    parentName = record.parentName;
+            // Handle node selection
+            tree.on('select', function (e, $node, id) {
+                saveSelectedNodeId(id);
+                var nodeData = tree.getDataById(id);
 
-                    // Split the node record
-                    [rand, type, organisation_id] = record.id.split('-');
+                if (nodeData) {
+                    primaryNodeId = nodeData.id;
+                    nodeName = nodeData.text;
+                    parentId = nodeData.parentId;
+                    parentName = nodeData.parentName;
 
-                    // Organisation details
+                    [rand, type, organisation_id] = nodeData.id.split('-');
+
                     organisationID = organisation_id;
                     organisationType = type;
                     organisationName = nodeName;
-                    organisationSlug = record.slug;
+                    organisationSlug = nodeData.slug;
 
-                    alert('Primary Node ID: (' + primaryNodeId + ')' + ' ID: (' + organisationID + ')' + ' Type: (' + organisationType + ')' + ' Organisation Name: (' + organisationName + ')' + ' Organisation Slug: (' + organisationSlug + ')' + ' is ' + state +
-                        '\nParent ID: (' + parentId + ')' + ' Parent Name: (' + parentName + ')');
-
-                    // Update the form action attribute with the new ID
                     cardTitle.text('Add - ' + organisationName);
                     pageTitle.text('Add - ' + organisationName);
                     submitButton.text('Add ' + organisationName + ' New');
@@ -208,61 +201,128 @@
                     $('#organisation_type_id').val(organisationID);
 
                     if (organisationType === 'ot') {
-                        organisationTypeform.show();
+                        organisationForm.show();
                         $('input[name="_method"]').val('POST');
                         clearOrganisationTypeFields();
-                        $('#organisationTypeform').attr('action', '/admin/organisations/store');
+                        $('#organisationForm').attr('action', '/admin/organisations/store');
+                        actionUrl = '/admin/organisations/store';
                     }
 
                     if (organisationType === 'o') {
-                        organisationTypeform.show();
-                        $('#organisationTypeform').attr('action', '/admin/organisations/' + organisationSlug + '/update');
+                        organisationForm.show();
+                        $('#organisationForm').attr('action', '/admin/organisations/' + organisationSlug + '/update');
+                        actionUrl = '/admin/organisations/' + organisationSlug + '/update';
                         $('input[name="_method"]').val('PATCH');
                         submitButton.text('Update ' + organisationName + ' Details');
                         fetchOrganisation(organisationSlug);
                     }
 
-                    // Check if there is a previously checked node
-                    if (nodeToUncheck !== null) {
-                        var previousNode = tree.getNodeById(nodeToUncheck);
-                        tree.uncheck(previousNode);
-
-                        // Update the form action attribute with the new ID
-                        cardTitle.text('Add - ' + organisationName);
-                        pageTitle.text('Add - ' + organisationName);
-                        submitButton.text('Add ' + organisationName + ' New');
-                        organisationTypeform.show();
-                    }
-
-                    // Store the ID of the new checked node
-                    checkedNodeId = primaryNodeId;
-                    // Store the ID of the new node to uncheck
-                    nodeToUncheck = checkedNodeId;
-
-                    // Update the hidden field with the checkedNodeId value
-                    hiddenNodeIdField.val(checkedNodeId);
-                    // Update the element to display the checked node's name
+                    hiddenNodeIdField.val(primaryNodeId);
                     checkedNodeNameElement.text(nodeName);
-                } else if (state === 'unchecked') {
-                    // Handling the unchecked node
-
-                    // Reset nodeToUncheck if the unchecked node is the same as nodeToUncheck
-                    if (nodeToUncheck === record.id) {
-                        nodeToUncheck = null;
-                    }
-
-                    cardTitle.text('Add New Organisation');
-                    pageTitle.text('Organisation');
-                    submitButton.text('Add New');
-                    $('#parent_id').val(parentId);
-                    $('#parent_name').val(parentName);
-                    $('#organisation_type').val(organisationType);
-                    $('#organisation_type_id').val(organisationID);
-                    organisationTypeform.hide();
-
-                    //alert(record.id + ' is unchecked' + 'node to be unchecked is: ' + nodeToUncheck);
                 }
             });
+            tree.on('unselect', function (e, node, id) {
+                actionUrl = '/admin/organisations/store';
+                organisationForm.hide();
+                clearSavedNodeId();
+            });
+
+            $('#organisationForm').submit(function (event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                var formData = $(this).serialize(); // Serialize the form data
+
+                $.ajax({
+                    type: 'POST',
+                    url: actionUrl, // The URL to the server-side script that will process the form data
+                    data: formData,
+                    success: function (response) {
+                        $('#organisationForm').trigger('reset');
+
+                        // Set the flag to true and reload the tree
+                        treeReloaded = true;
+                        tree.reload();
+
+                        console.log('Form successfully submitted. Server responded with: ' + response);
+                    },
+                    error: function () {
+                        console.error('An error occurred while submitting the form.');
+                    }
+                });
+            });
+
+
+            var treeReloaded = true; // Flag to check if tree has been reloaded
+
+            // Function to save selected node ID to local storage
+            function saveSelectedNodeId(nodeId) {
+                localStorage.setItem('selectedNodeId', nodeId);
+            }
+
+            // Function to get selected node ID from local storage
+            function getSelectedNodeId() {
+                return localStorage.getItem('selectedNodeId');
+            }
+
+            // Function to clear the saved node ID from local storage
+            function clearSavedNodeId() {
+                localStorage.removeItem('selectedNodeId');
+            }
+
+            // Function to expand from root to a given node
+            function expandFromRootToNode(nodeId) {
+                var parents = tree.parents(nodeId);
+                if (parents && parents.length) {
+                    parents.reverse().forEach(function(parentId) {
+                        tree.expand(parentId);
+                    });
+                }
+                tree.expand(nodeId);
+            }
+
+            // Function to select and expand from root to a node by ID
+            function selectAndExpandFromRootToNode(nodeId) {
+                console.log("Selecting and expanding node: ", nodeId);
+                var nodeToSelect = tree.getNodeById(nodeId);
+                if (nodeToSelect) {
+                    tree.select(nodeToSelect);  // Selects the node
+                    expandFromRootToNode(nodeId);  // Expands from root to the node
+                } else {
+                    console.log("Node not found: ", nodeId);
+                }
+            }
+
+            // Select and expand from root to the node if it's saved in local storage
+            var savedNodeId = getSelectedNodeId();
+            if (savedNodeId) {
+                selectAndExpandFromRootToNode(savedNodeId);
+            }
+
+            // Event listener for node selection
+            tree.on('select', function (e, node, id) {
+                saveSelectedNodeId(id);
+            });
+
+            // Event listener for node unselection (if applicable)
+            // Replace 'unselect' with the correct event name if different
+            tree.on('unselect', function (e, node, id) {
+                clearSavedNodeId();
+            });
+
+            // Handle the dataBound event
+            tree.on('dataBound', function() {
+                if (treeReloaded) {
+                    var savedNodeId = getSelectedNodeId();
+                    if (savedNodeId) {
+                        selectAndExpandFromRootToNode(savedNodeId);
+                    }
+                    // Reset the flag
+                    treeReloaded = false;
+                }
+            });
+
         });
+
+
     </script>
 @endsection

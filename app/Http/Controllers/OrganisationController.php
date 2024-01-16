@@ -14,7 +14,7 @@ class OrganisationController extends Controller
         return view('organisations.index');
     }
 
-    //store organisation of organisation type pass organisationType
+    //store organisation of organisation
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -24,7 +24,6 @@ class OrganisationController extends Controller
         ]);
 
         $organisation = Organisation::create($validatedData);
-
 
         // Find parent OrganisationType
         $organisationType = OrganisationType::find($validatedData['organisation_type_id']);
@@ -37,10 +36,6 @@ class OrganisationController extends Controller
         }
         $organisation->save();
 
-        // Assuming $organisation is an instance of Organisation
-        /*$parentOrganisation = $organisation->parentOrganisation; // This will get the parent Organisation
-        dd($parentOrganisation);*/
-
         return redirect()->route('admin.organisations.index')->with('success', 'Organisation created successfully');
     }
 
@@ -49,7 +44,6 @@ class OrganisationController extends Controller
         $data = request()->validate([
             'name' => 'required',
         ]);
-
 
         $organisation->update($data);
         return redirect()->route('admin.organisations.index')->with('success', 'Organisation created successfully');

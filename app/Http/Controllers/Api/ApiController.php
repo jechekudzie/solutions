@@ -17,7 +17,7 @@ class ApiController extends Controller
 
     /*
      |--------------------------------------------------------------------------
-     | Organisation Types Management Routes
+     | Organisation Types
      |--------------------------------------------------------------------------
      */
     public function fetchTemplate()
@@ -46,7 +46,7 @@ class ApiController extends Controller
 
     /*
      |--------------------------------------------------------------------------
-     | Organisation Management Routes
+     | Organisation Management
      |--------------------------------------------------------------------------
      */
     function generateUniqueNumber($min, $max)
@@ -58,6 +58,7 @@ class ApiController extends Controller
         $this->generatedNumbers[] = $num;
         return $num;
     }
+
     public function fetchOrganisationInstances()
     {
         $organisations = OrganisationType::whereDoesntHave('parents')->get();
@@ -127,11 +128,11 @@ class ApiController extends Controller
     }
 
     //fetchOrganisation via API
-    public function fetchOrganisation(Organisation $organisation){
+    public function fetchOrganisation(Organisation $organisation)
+    {
         //return json response
         return response()->json($organisation);
     }
-
 
 
 }

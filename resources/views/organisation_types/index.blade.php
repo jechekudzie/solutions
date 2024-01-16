@@ -2,7 +2,6 @@
 
 @section('content')
 
-
     <div class="page-content">
         <div class="container-fluid">
             <!-- start page title -->
@@ -19,7 +18,6 @@
                     </div>
                 </div>
                 <!-- end page title -->
-
                 <div class="row">
                     <div class="col-lg-12">
                         <div class="card">
@@ -27,12 +25,10 @@
                                 <div class="d-flex align-items-center flex-wrap gap-2">
                                     <div class="flex-grow-1">
 
-                                        <a href="{{route('admin.organisation-types.index')}}" class="btn btn-info  add-btn">
+                                        <a href="{{route('admin.organisation-types.index')}}"
+                                           class="btn btn-info  add-btn">
                                             <i class="fa fa-refresh"></i> Refresh
                                         </a>
-                                       {{-- <button id="new-button" class="btn btn-success  add-btn">
-                                            <i class="fa fa-plus"></i> Add new
-                                        </button>--}}
                                     </div>
                                 </div>
                             </div>
@@ -55,7 +51,8 @@
                                 <h6 id="card-title" class="card-title mb-0">Add New Organisation Type</h6>
                             </div>
                             <div class="card-body">
-                                <form id="organisationTypeform" action="/admin/organisation-types/store" method="post" enctype="multipart/form-data">
+                                <form id="organisationTypeform" action="/admin/organisation-types/store" method="post"
+                                      enctype="multipart/form-data">
                                     <input type="hidden" name="_method" value="POST">
                                     @csrf
                                     <div class="mb-3">
@@ -70,7 +67,8 @@
                                                   placeholder="Describe Organisation Type"></textarea>
                                     </div>
                                     <div class="text-start">
-                                        <button id="submit-button" type="submit" class="btn btn-primary">Add New</button>
+                                        <button id="submit-button" type="submit" class="btn btn-primary">Add New
+                                        </button>
                                     </div>
                                 </form>
 
@@ -78,7 +76,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!--end col-->
                     <!--end card-->
                 </div>
@@ -93,101 +90,158 @@
 
     <script>
 
-        $(document).ready(function() {
+        $(document).ready(function () {
+            //set up laravel ajax csrf token
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            });
             // Initialize the tree
             var tree = $('#tree').tree({
                 primaryKey: 'id',
                 dataSource: '/api/admin/organisation-types',
-                checkboxes: true,
                 uiLibrary: 'bootstrap4',
                 cascadeCheck: false,
             });
 
-            var checkedNodeId = null; // Variable to store the ID of the checked node
-            var nodeToUncheck = null; // Variable to store the ID of the node to uncheck
-
-            // Get references to the hidden field and the element to display the checked node's name
             var hiddenNodeIdField = $('#hiddenNodeId');
             var checkedNodeNameElement = $('#checkedNodeName');
-            var previousNode = null; // Variable to store the ID of the previously checked node
-
-            let recordData = null; // Record Data
-            let primaryNodeId = null; // Primary Node ID
-            let nodeName = null; // Node Name
-            let organisationTypeName = null; // Organisation slug
-            let organisationTypeSlug = null; // Organisation slug
-
-            //form data
             var submitButton = $('#submit-button');
             var cardTitle = $('#card-title');
             var pageTitle = $('#page-title');
-            // Get Record ID and record text on checkbox change
-            tree.on('checkboxChange', function(e, $node, record, state) {
-                if (state === 'checked') {
-                    recordData = record;
-                    primaryNodeId = record.id;
-                    nodeName = record.text;
+
+            let primaryNodeId = null;
+            let nodeName = null;
+            let organisationTypeName = null;
+            let organisationTypeSlug = null;
+            let actionUrl = null;
+            actionUrl = '/admin/organisation-types/store';
+            // Handle node selection
+            tree.on('select', function (e, $node, id) {
+                saveSelectedNodeId(id);
+                var nodeData = tree.getDataById(id);
+
+                if (nodeData) {
+                    primaryNodeId = nodeData.id;
+                    nodeName = nodeData.text;
                     organisationTypeName = nodeName;
-                    organisationTypeSlug = record.slug; // Get the name of the checked node
+                    organisationTypeSlug = nodeData.slug;
 
-                    //alert('Organisation Type Is: ' + nodeName + ' (ID: ' + primaryNodeId + ') ' + 'Organisation Type Slug:' + organisationTypeSlug + ' is' + state);
-
-                    // Update the form action attribute with the new ID
                     cardTitle.text('Add - ' + organisationTypeName + ' Organisation Type');
                     pageTitle.text('Add - ' + organisationTypeName + ' Organisation Type');
-                    submitButton.text('Add ' + organisationTypeName + 'Organisation Type');
-                    $('#organisationTypeform').attr('action', '/admin/organisation-types/' + organisationTypeSlug);
+                    submitButton.text('Add ' + organisationTypeName + ' Organisation Type');
+                    /*$('#organisationTypeform').attr('action', '/admin/organisation-types/' + organisationTypeSlug);*/
+                    actionUrl =  '/admin/organisation-types/' + organisationTypeSlug;
 
-                    // Check if there is a previously checked node
-                    if (nodeToUncheck !== null) {
-                        // Uncheck the previously checked node
-                         previousNode = tree.getNodeById(nodeToUncheck);
-                        tree.uncheck(previousNode);
-
-                        //clear the form fields
-                        $('#name').val('');
-                        $('#description').val('');
-
-                        cardTitle.text('Add - ' + organisationTypeName + ' Organisation Type');
-                        pageTitle.text('Add - ' + organisationTypeName + ' Organisation Type');
-                        submitButton.text('Add ' + organisationTypeName + ' Organisation Type');
-                        $('#organisationTypeform').attr('action', '/admin/organisation-types/' + organisationTypeSlug);
-
-                    }
-
-                    // Store the ID of the new checked node
-                    checkedNodeId = primaryNodeId;
-                    // Store the ID of the new node to uncheck
-                    nodeToUncheck = checkedNodeId;
-
-                    // Update the hidden field with the checkedNodeId value
-                    hiddenNodeIdField.val(checkedNodeId);
-                    // Update the element to display the checked node's name
+                    hiddenNodeIdField.val(primaryNodeId);
                     checkedNodeNameElement.text(nodeName);
-                }
-                else if (state === 'unchecked') {
-                    // Handling the unchecked node
-                    // Reset nodeToUncheck if the unchecked node is the same as nodeToUncheck
-                    if (nodeToUncheck === record.id) {
-                        nodeToUncheck = null;
-                    }
-                    //clear form fields
+
+                    // Clear form fields
                     $('#name').val('');
                     $('#description').val('');
-
-                    cardTitle.text('Add New Organisation Type');
-                    pageTitle.text('Organisation Types');
-                    submitButton.text('Add New');
-                    $('#organisationTypeform').attr('action', '/admin/organisation-types/store');
                 }
+            });
+            tree.on('unselect', function (e, node, id) {
+                actionUrl = '/admin/organisation-types/store';
+                clearSavedNodeId();
+            });
 
+            $('#organisationTypeform').submit(function(event) {
+                event.preventDefault(); // Prevent the default form submission
 
+                var formData = $(this).serialize(); // Serialize the form data
+
+                $.ajax({
+                    type: 'POST',
+                    url: actionUrl, // The URL to the server-side script that will process the form data
+                    data: formData,
+                    success: function(response) {
+                        $('#organisationTypeform').trigger('reset');
+
+                        // Set the flag to true and reload the tree
+                        treeReloaded = true;
+                        tree.reload();
+
+                        console.log('Form successfully submitted. Server responded with: ' + response);
+                    },
+                    error: function() {
+                        console.error('An error occurred while submitting the form.');
+                    }
+                });
+            });
+
+            var treeReloaded = true; // Flag to check if tree has been reloaded
+
+            // Function to save selected node ID to local storage
+            function saveSelectedNodeId(nodeId) {
+                localStorage.setItem('selectedNodeId', nodeId);
+            }
+
+            // Function to get selected node ID from local storage
+            function getSelectedNodeId() {
+                return localStorage.getItem('selectedNodeId');
+            }
+
+            // Function to clear the saved node ID from local storage
+            function clearSavedNodeId() {
+                localStorage.removeItem('selectedNodeId');
+            }
+
+            // Function to expand from root to a given node
+            function expandFromRootToNode(nodeId) {
+                var parents = tree.parents(nodeId);
+                if (parents && parents.length) {
+                    parents.reverse().forEach(function(parentId) {
+                        tree.expand(parentId);
+                    });
+                }
+                tree.expand(nodeId);
+            }
+
+            // Function to select and expand from root to a node by ID
+            function selectAndExpandFromRootToNode(nodeId) {
+                console.log("Selecting and expanding node: ", nodeId);
+                var nodeToSelect = tree.getNodeById(nodeId);
+                if (nodeToSelect) {
+                    tree.select(nodeToSelect);  // Selects the node
+                    expandFromRootToNode(nodeId);  // Expands from root to the node
+                } else {
+                    console.log("Node not found: ", nodeId);
+                }
+            }
+
+            // Select and expand from root to the node if it's saved in local storage
+            var savedNodeId = getSelectedNodeId();
+            if (savedNodeId) {
+                selectAndExpandFromRootToNode(savedNodeId);
+            }
+
+            // Event listener for node selection
+            tree.on('select', function (e, node, id) {
+                saveSelectedNodeId(id);
+            });
+
+            // Event listener for node unselection (if applicable)
+            // Replace 'unselect' with the correct event name if different
+            tree.on('unselect', function (e, node, id) {
+                clearSavedNodeId();
+            });
+
+            // Handle the dataBound event
+            tree.on('dataBound', function() {
+                if (treeReloaded) {
+                    var savedNodeId = getSelectedNodeId();
+                    if (savedNodeId) {
+                        selectAndExpandFromRootToNode(savedNodeId);
+                    }
+                    // Reset the flag
+                    treeReloaded = false;
+                }
             });
         });
 
 
     </script>
-
-
 
 @endsection
